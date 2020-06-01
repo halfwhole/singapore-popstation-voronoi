@@ -19,69 +19,63 @@ fetch('data.json').then(res => res.json()).then(data => {
                         "<p>Operating hours: " + feature.properties.operating_hours + "</p>");
     }
 
+    function pointToLayer(feature, latlng) {
+        return L.marker([latlng['lat'], latlng['lng']]);
+    }
+
     // Add markers
     L.geoJSON(data, {
         onEachFeature: addPopupContent,
-        pointToLayer: (feature, latlng) => {
-            newLatLng = [latlng['lat'], latlng['lng']];
-            return L.marker(newLatLng);
-        }
+        pointToLayer: pointToLayer
     }).addTo(map);
 
-    // Draw voronoi graph
-    const points = data['features'].map(ft => ft['geometry']['coordinates']);
-    const voronoi = d3.voronoi().x(d => d[1]).y(d => d[0]);
-    const polygons = voronoi(points).polygons();
+    // Draw points as markers
+    const points = data['features']
+          .map(ft => ft['geometry']['coordinates'])
+          .map(pt => new L.LatLng(pt[1], pt[0]));
 
-    const paths = polygons.map(polygon => {
-        return "M" + polygon.join("L") + "Z";
-    });
-    console.log(paths);
+    function update() {
 
-    // create references to polygons in points
-    // voronoiPolygons.forEach(function(polygon) {
-    //     console.log(polygon);
-    //     polygon.point.cell = polygon;
-    // });
+        const layerPoints = points.map(latlng => {
+            return map.latLngToLayerPoint(latlng);
+        });
 
-    // draw voronoi cells
-    var buildPathFromPoint = function(point) {
-        if (point.cell == undefined) console.log(point);
-        return "M" + point.cell.join("L") + "Z";
+        // Draw points as circles
+        // svg.selectAll('g').remove();
+
+        // const svgPoints = svg
+        //       .selectAll('g')
+        //       .data(layerPoints)
+        //       .enter()
+        //       .append('g');
+
+        // svgPoints
+        //     .append('circle')
+        //     .attr('transform', d => `translate(${d.x},${d.y})`)
+        //     .attr('r', 2);
+
+        // Draw voronoi graph
+        const width = map.getSize().x;
+        const height = map.getSize().y;
+        const voronoi = d3.voronoi().x(d => d.x).y(d => d.y).extent([[0, 0], [width, height]]);
+        const polygons = voronoi.polygons(layerPoints).filter(x => !!x);
+
+        svg.selectAll('path').remove();
+
+        function buildPath(polygon) {
+            return 'M' + polygon.join('L') + 'Z';
+        }
+
+        const svgPolygons = svg.selectAll('g')
+            .data(polygons)
+            .enter()
+            .append('path')
+            .attr('d', buildPath)
+            .attr('fill', 'none')
+            .attr('stroke', '#777')
+            .attr('stroke-width', '0.7');
     }
 
-    svg.append("path")
-        .attr("d", buildPathFromPoint)
-        .attr('fill', 'none')
-        .attr('stroke', '#777')
-        .attr('stroke-width', '0.7');
+    map.on("viewreset moveend", update);
+    update();
 });
-
-// d3.json('circles.json').then(function(collection) {
-//     // Add a LatLng object to each item in the dataset
-//     collection.objects.forEach(function(d) {
-//         d.LatLng = new L.LatLng(d.circle.coordinates[0],
-//                                 d.circle.coordinates[1])
-//     });
-
-//     const feature = g.selectAll("circle")
-//         .data(collection.objects)
-//         .enter().append("circle")
-//         .style("stroke", "black")
-//         .style("opacity", .6)
-//         .style("fill", "red")
-//         .attr("r", 20);
-
-//     function update() {
-//         feature.attr("transform",
-//                      function(d) {
-//                          return "translate("+
-//                              map.latLngToLayerPoint(d.LatLng).x +","+
-//                              map.latLngToLayerPoint(d.LatLng).y +")";
-//                      }
-//                     )
-//     }
-
-//     map.on("viewreset moveend", update);
-//     update();
-// });
