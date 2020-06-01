@@ -1,17 +1,20 @@
-## singapore-popstation-voronoi
+# singapore-popstation-voronoi
+
+![Example image](image.png)
 
 Singapore split by the nearest POPStation. Made with Leaflet and D3.js.
 
 
-![Example image](image.png)
-
 ## Visiting the site
+
+The demo can be accessed at https://halfwhole.github.io/singapore-popstation-voronoi/.
+
+Alternatively, to run it locally on `http://localhost:8000`, you could start a
+simple HTTP server:
 
 ``` python
 python -m SimpleHTTPServer
 ```
-
-Then you can access `http://localhost:8000`.
 
 ## POPStation data
 
